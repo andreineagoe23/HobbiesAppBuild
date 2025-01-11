@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Hobby
+from .models import CustomUser, Hobby, FriendRequest
 
 # serializer for hobbies.
 class HobbySerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         return instance
 
-# searilzier for friend requests.
+# serializer for friend requests.
 class FriendRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest

@@ -1,9 +1,13 @@
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from .models import CustomUser, Hobby
-from .serializers import UserProfileSerializer
+from django.http import JsonResponse, HttpRequest, HttpResponse
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import CustomUser, Hobby, FriendRequest
+from .serializers import UserProfileSerializer, FriendRequestSerializer
+
 
 class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
