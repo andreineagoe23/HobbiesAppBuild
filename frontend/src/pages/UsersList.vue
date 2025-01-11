@@ -1,5 +1,5 @@
 <template>
-    <div class="h3">
+    <div class="h1">
       {{ title }}
     </div>
   </template>
@@ -10,7 +10,7 @@
       export default defineComponent({
           data() {
               return {
-                  title: "Other Page",
+                  title: "User List Page",
               }
           }
       })
