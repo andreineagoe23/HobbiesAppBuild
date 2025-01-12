@@ -83,73 +83,89 @@ export default defineComponent({
 
     // Fetch profile and hobbies
     const fetchProfile = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/api/profile/", {
-          headers: {
-            Authorization: `Bearer ${userStore.token}`,
-          },
-        });
+  try {
+    const response = await fetch("http://localhost:8000/api/profile/", {
+      headers: {
+        Authorization: `Token ${userStore.token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch profile");
-        }
+    if (!response.ok) {
+      throw new Error("Failed to fetch profile");
+    }
 
-        const data = await response.json();
-        editableUser.value = {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          dob: data.date_of_birth,
-          hobbies: data.hobbies,
-        };
-        selectedHobbies.value = data.hobbies.map((hobby: Hobby) => hobby.id);
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      }
+    const data = await response.json();
+    editableUser.value = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      dob: data.date_of_birth,
+      hobbies: data.hobbies,
     };
+    selectedHobbies.value = data.hobbies.map((hobby: Hobby) => hobby.id);
+  } catch (err) {
+    console.error("Error fetching profile:", err);
+  }
+};
 
-    const fetchHobbies = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/api/hobbies/");
-        if (!response.ok) {
-          throw new Error("Failed to fetch hobbies");
-        }
+const fetchHobbies = async () => {
+  try {
+    const response = await fetch("http://localhost:8000/api/hobbies/", {
+      headers: {
+        Authorization: `Token ${userStore.token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-        allHobbies.value = await response.json();
-      } catch (err) {
-        console.error("Error fetching hobbies:", err);
-      }
-    };
+    if (!response.ok) {
+      throw new Error("Failed to fetch hobbies");
+    }
+
+    allHobbies.value = await response.json();
+  } catch (err) {
+    console.error("Error fetching hobbies:", err);
+  }
+};
+
 
     // Save profile changes
     const saveProfile = async () => {
-      if (!editableUser.value) return;
+  if (!editableUser.value) return;
 
-      try {
-        const response = await fetch("http://localhost:8000/api/profile/", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userStore.token}`,
-          },
-          body: JSON.stringify({
-            name: editableUser.value.name,
-            email: editableUser.value.email,
-            date_of_birth: editableUser.value.dob,
-            hobbies: selectedHobbies.value.map((id) => ({ id })),
-          }),
-        });
+  const payload = {
+    name: editableUser.value.name,
+    email: editableUser.value.email,
+    date_of_birth: editableUser.value.dob,
+    hobbies: selectedHobbies.value.filter((id) => id !== null && id !== undefined), // Remove invalid IDs
+  };
 
-        if (!response.ok) {
-          throw new Error("Failed to save profile");
-        }
+  console.log("Payload being sent:", payload);
 
-        alert("Profile updated successfully!");
-      } catch (err) {
-        console.error("Error saving profile:", err);
-        alert("An error occurred while updating the profile.");
-      }
-    };
+  try {
+    const response = await fetch("http://localhost:8000/api/profile/", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${userStore.token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error response from backend:", errorData);
+      throw new Error("Failed to save profile");
+    }
+
+    alert("Profile updated successfully!");
+  } catch (err) {
+    console.error("Error saving profile:", err);
+    alert("An error occurred while updating the profile.");
+  }
+};
+
+
 
     onMounted(() => {
       fetchProfile();
@@ -165,7 +181,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style>
-/* Add custom styles here if needed */
-</style>

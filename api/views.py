@@ -105,24 +105,29 @@ class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """
+        Retrieve the authenticated user's profile.
+        """
         user = request.user
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
 
     def put(self, request):
-        user = request.user
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
+        """
+        Update the authenticated user's profile.
+        """
+        print("Authenticated user:", request.user)  # Debugging log
+        print("Received data:", request.data)      # Debugging log
 
+        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            # Update hobbies if provided
-            if 'hobbies' in request.data:
-                hobbies_data = request.data['hobbies']
-                user.hobbies.set(hobbies_data)
-                user.save()
+            print("Saved data:", serializer.data)  # Debugging log
             return Response(serializer.data)
-        
-        return Response(serializer.errors, status=400)
+        else:
+            print("Validation errors:", serializer.errors)  # Debugging log
+            return Response(serializer.errors, status=400)
+
 
 
 class CustomUserCreationForm(forms.ModelForm):
