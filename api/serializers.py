@@ -1,13 +1,11 @@
 from rest_framework import serializers
 from .models import CustomUser, Hobby, FriendRequest
 
-# serializer for hobbies.
 class HobbySerializer(serializers.ModelSerializer):
     class Meta:
         model = Hobby
         fields = ['id', 'name']
 
-# serializer for user profiles.
 class UserProfileSerializer(serializers.ModelSerializer):
     hobbies = HobbySerializer(many=True)
 
@@ -19,6 +17,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         hobbies_data = validated_data.pop('hobbies', [])
         instance = super().update(instance, validated_data)
 
+        # Update or create hobbies if necessary
         if hobbies_data:
             instance.hobbies.clear()
             for hobby_data in hobbies_data:

@@ -7,11 +7,12 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import CustomUser, Hobby, FriendRequest
-from .serializers import UserProfileSerializer, FriendRequestSerializer
+from .serializers import UserProfileSerializer, FriendRequestSerializer, HobbySerializer
 from django.contrib.auth import get_user_model
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import IntegrityError
 from django import forms
+
 
 CustomUser = get_user_model()
 
@@ -24,29 +25,42 @@ def api_signup(request):
     email = data.get('email')
     username = data.get('username')
     password = data.get('password')
+    name = data.get('name')
+    date_of_birth = data.get('date_of_birth')
+    hobbies = data.get('hobbies', [])  # List of hobby IDs
 
     # Validate required fields
-    if not email or not username or not password:
+    if not email or not username or not password or not name or not date_of_birth:
         return Response({'error': 'All fields are required.'}, status=HTTP_400_BAD_REQUEST)
 
     try:
-        # Check if email already exists
         if CustomUser.objects.filter(email=email).exists():
             return Response({'error': 'Email already exists.'}, status=HTTP_400_BAD_REQUEST)
 
-        # Check if username already exists
         if CustomUser.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists.'}, status=HTTP_400_BAD_REQUEST)
 
-        # Create the user
-        user = CustomUser.objects.create_user(username=username, email=email, password=password)
+        user = CustomUser.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            name=name,
+            date_of_birth=date_of_birth,
+        )
+
+        for hobby_id in hobbies:
+            try:
+                hobby = Hobby.objects.get(id=hobby_id)
+                user.hobbies.add(hobby)
+            except Hobby.DoesNotExist:
+                continue
+
+        user.save()
         return Response({'message': 'User created successfully.'}, status=HTTP_201_CREATED)
     
-    except IntegrityError as e:
-        return Response({'error': 'Database error. Please try again.'}, status=HTTP_400_BAD_REQUEST)
     except Exception as e:
-        # Log unexpected errors
         return Response({'error': str(e)}, status=HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['POST'])
@@ -79,8 +93,6 @@ def api_login(request):
         print(f"Login error: {str(e)}")
         return Response({'error': 'Internal server error'}, status=500)
 
-
-
 class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -92,10 +104,18 @@ class UserProfileAPIView(APIView):
     def put(self, request):
         user = request.user
         serializer = UserProfileSerializer(user, data=request.data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
+            # Update hobbies if provided
+            if 'hobbies' in request.data:
+                hobbies_data = request.data['hobbies']
+                user.hobbies.set(hobbies_data)
+                user.save()
             return Response(serializer.data)
+        
         return Response(serializer.errors, status=400)
+
 
 class CustomUserCreationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Password")
@@ -133,7 +153,6 @@ class CustomUserCreationForm(forms.ModelForm):
             raise forms.ValidationError("Username already exists.")
         return username
 
-
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -166,3 +185,15 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+@api_view(['GET'])
+def get_hobbies(request):
+    try:
+        hobbies = Hobby.objects.all()
+        serializer = HobbySerializer(hobbies, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        print(f"Error fetching hobbies: {str(e)}")
+        return Response({"error": "Unable to fetch hobbies. Please try again later."}, status=500)
+
+
