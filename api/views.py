@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import IntegrityError
 from django import forms
+from collections import Counter
 
 
 CustomUser = get_user_model()
@@ -197,3 +198,62 @@ def get_hobbies(request):
         return Response({"error": "Unable to fetch hobbies. Please try again later."}, status=500)
 
 
+def calculate_similarity(user, all_users):
+    """
+    Calculate the similarity of hobbies between a user and all other users.
+    Returns a list of tuples (other_user, similarity_score) sorted by similarity_score in descending order.
+    """
+    # Get the set of hobbies for the current user
+    user_hobbies = set(user.hobbies.values_list('id', flat=True))
+
+    # Prefetch hobbies for all users to avoid redundant database queries
+    all_users = all_users.prefetch_related('hobbies')
+
+    similarity = []  # List to store similarity tuples (other_user, similarity_score)
+
+    for other_user in all_users:
+        if other_user != user:  # Skip the user itself
+            # Get the set of hobbies for the other user
+            other_user_hobbies = set(other_user.hobbies.values_list('id', flat=True))
+
+            # Calculate common and union of hobbies
+            common_hobbies = user_hobbies.intersection(other_user_hobbies)
+            total_hobbies = user_hobbies.union(other_user_hobbies)
+
+            # Avoid division by zero, only consider users with at least one hobby
+            if len(total_hobbies) > 0:
+                similarity_score = len(common_hobbies) / len(total_hobbies)
+                similarity.append((other_user, similarity_score))
+
+    # Sort by similarity score in descending order
+    similarity.sort(key=lambda x: x[1], reverse=True)
+
+    return similarity
+    
+
+#similar users view
+@api_view(['GET'])
+def get_similar_users(request):
+    try:
+        # Get the current authenticated user
+        user = request.user
+        
+        # Fetch all users from the database
+        all_users = CustomUser.objects.all()
+
+        # Calculate similarity using your function
+        similarity_scores = calculate_similarity(user, all_users)  # or calculate_hobby_similarity
+        
+        # Limit the number of users returned (for example, top 10)
+        top_similar_users = similarity_scores[:10]
+        
+        # Format the response
+        response_data = [{
+            'user_id': other_user.id,
+            'username': other_user.username,
+            'similarity_score': similarity_score
+        } for other_user, similarity_score in top_similar_users]
+
+        return Response({'similar_users': response_data}, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

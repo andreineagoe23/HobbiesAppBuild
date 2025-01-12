@@ -16,6 +16,7 @@ const routes = [
   { path: '/other/', name: 'Other Page', component: OtherPage },
   { path: '/signup', name: 'Signup', component: Signup },
   { path: '/login', name: 'Login', component: Login },
+  { path: '/users', name: 'UsersList', component: UsersList },
   {
     path: '/profile',
     name: 'Profile',
@@ -23,12 +24,14 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    // i have tested if the userList.vue component is displayed without any authentication and simply clicking the nav routing link
     path: '/users',
     name: 'UsersList',
     component: UsersList,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true }, //can be commented to see the userList.vue component without any authentication
   },
 ];
+// right now even after after logging in properly, you are not redirected from login page to users 
 
 const router = createRouter({
   history: createWebHistory(base),
