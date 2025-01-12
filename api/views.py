@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import IntegrityError
 from django import forms
+from rest_framework.authtoken.models import Token
 
 
 CustomUser = get_user_model()
@@ -62,8 +63,11 @@ def api_signup(request):
         return Response({'error': str(e)}, status=HTTP_400_BAD_REQUEST)
 
 
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
 
 @api_view(['POST'])
+@permission_classes([AllowAny])  # Allow access to unauthenticated users
 def api_login(request):
     try:
         email = request.data.get('email')
@@ -72,12 +76,13 @@ def api_login(request):
         if not email or not password:
             return Response({'error': 'Email and password are required.'}, status=400)
 
-        # Authenticate using email as the username field
         user = authenticate(request, username=email, password=password)
         if user:
-            # Include all required fields in the response
+            # Generate or retrieve the token
+            from rest_framework.authtoken.models import Token
+            token, created = Token.objects.get_or_create(user=user)
             return Response({
-                'token': 'dummy_token',  # Replace with an actual token if using token-based auth
+                'token': token.key,
                 'user': {
                     'id': user.id,
                     'email': user.email,
@@ -92,6 +97,9 @@ def api_login(request):
     except Exception as e:
         print(f"Login error: {str(e)}")
         return Response({'error': 'Internal server error'}, status=500)
+
+
+
 
 class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]

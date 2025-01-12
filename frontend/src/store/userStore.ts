@@ -37,23 +37,35 @@ export const useUserStore = defineStore('user', {
      * Fetches the current user using the stored token.
      */
     async fetchUser() {
+      const token = localStorage.getItem("authToken");
+if (!token) {
+    console.error("No token found!");
+    return;
+}
+
+  
       try {
-        const response = await fetch('http://localhost:8000/api/profile/', {
-          headers: {
-            Authorization: `Bearer ${this.token}`, // Assuming token-based auth
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-
-        const data = await response.json();
-        this.setUser(data);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        this.clearUser(); // Logout the user on error
+          const response = await fetch("http://localhost:8000/api/profile/", {
+              method: "GET",
+              headers: {
+                  "Authorization": `Token ${token}`,
+                  "Content-Type": "application/json",
+              },
+          });
+  
+          if (response.status === 401) {
+              console.error("Unauthorized: Invalid token");
+              throw new Error("Unauthorized access");
+          }
+  
+          const userData = await response.json();
+          this.setUser(userData);
+          console.log("Fetched user data:", userData);
+      } catch (err) {
+          console.error("Failed to fetch user data", err);
       }
-    },
+  }
+   
+    ,
   },
 });

@@ -31,57 +31,61 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useUserStore } from '../store/userStore';
+import { defineComponent, ref } from "vue";
+import { useUserStore } from "../store/userStore";
 
 export default defineComponent({
-  name: 'Login',
+  name: "Login",
   setup() {
-    const email = ref('');
-    const password = ref('');
+    const email = ref("");
+    const password = ref("");
     const errorMessage = ref<string | null>(null);
     const userStore = useUserStore();
 
     const login = async () => {
-      errorMessage.value = null; // Clear previous error messages
-      try {
-        const response = await fetch('http://localhost:8000/api/login/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: email.value,
-            password: password.value,
-          }),
-        });
+  errorMessage.value = null; // Clear previous errors
+  try {
+    const response = await fetch("http://localhost:8000/api/login/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+      }),
+    });
 
-        if (!response.ok) {
-          // Handle non-200 responses
-          const errorText = await response.text();
-          console.error('Server error:', errorText);
-          throw new Error(`Login failed: ${response.statusText}`);
-        }
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Server response error:", errorData);
+      throw new Error(errorData.error || "Login failed.");
+    }
 
-        const data = await response.json();
-        console.log('Login successful:', data);
+    const data = await response.json();
+    console.log("Login successful:", data);
 
-        // Map the backend response to the User interface
-        userStore.setUser({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.name,
-          dob: data.user.dob,
-          hobbies: data.user.hobbies,
-        });
+    // Save the token and user details
+    localStorage.setItem("authToken", data.token);
+    userStore.setToken(data.token);
+    userStore.setUser({
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.name,
+      dob: data.user.dob,
+      hobbies: data.user.hobbies,
+    });
 
-        // Redirect to the main page or wherever appropriate
-        window.location.href = '/';
-      } catch (error: any) {
-        console.error('Login error:', error.message);
-        errorMessage.value = error.message || 'An error occurred during login.';
-      }
-    };
+    console.log("Token and user details saved successfully.");
+
+    // Redirect to the main page
+    window.location.href = "/";
+  } catch (error: any) {
+    console.error("Login error:", error.message);
+    errorMessage.value = error.message || "An error occurred during login.";
+  }
+};
+
 
     return {
       email,
