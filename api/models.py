@@ -8,24 +8,24 @@ class PageView(models.Model):
 
     def __str__(self):
         return f"Page view count: {self.count}"
-
+        
 class Hobby(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return self.name
 
-
 class CustomUser(AbstractUser):
-    name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
+    name = models.CharField(max_length=255)
     date_of_birth = models.DateField(null=True, blank=True)
     hobbies = models.ManyToManyField(Hobby, blank=True)
 
-    REQUIRED_FIELDS = ['email', 'name', 'date_of_birth']
+    USERNAME_FIELD = 'email'  # Use email for authentication
+    REQUIRED_FIELDS = ['username', 'name', 'date_of_birth']
 
     def __str__(self):
-        return self.username
+        return self.email
 
 class FriendRequest(models.Model):
     from_user = models.ForeignKey(CustomUser, related_name="sent_requests", on_delete=models.CASCADE)

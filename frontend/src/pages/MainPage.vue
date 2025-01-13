@@ -1,20 +1,19 @@
 <template>
-  <div class="h1">
-    {{ title }}
+  <div>
+    <h1>Main Page</h1>
+    <UsersList />
+    <FriendRequests />
   </div>
 </template>
 
 <script lang="ts">
-    import { defineComponent } from "vue";
+import UsersList from './UsersList.vue';
+import FriendRequests from './FriendRequest.vue';
 
-    export default defineComponent({
-        data() {
-            return {
-                title: "Main Page",
-            }
-        }
-    })
+export default {
+  components: {
+    UsersList,
+    FriendRequests,
+  },
+};
 </script>
-
-<style scoped>
-</style>

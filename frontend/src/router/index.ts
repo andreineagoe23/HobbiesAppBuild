@@ -1,42 +1,68 @@
-// Example of how to use Vue Router
+import { createRouter, createWebHistory } from "vue-router";
+import { useUserStore } from "../store/userStore";
 
-import { createRouter, createWebHistory } from 'vue-router'
+// Components
+import MainPage from "../pages/MainPage.vue";
+import OtherPage from "../pages/OtherPage.vue";
+import Login from "../pages/Login.vue";
+import Profile from "../pages/Profile.vue";
+import UsersList from "../pages/UsersList.vue";
+import Signup from "../pages/Signup.vue";
 
-// 1. Define route components.
-// These can be imported from other files
-import MainPage from '../pages/MainPage.vue';
-import OtherPage from '../pages/OtherPage.vue';
-import Login from '../pages/Login.vue';
-import Profile from '../pages/Profile.vue';
-import UsersList from '../pages/UsersList.vue';
-import Signup from '../pages/Signup.vue';
+const base = import.meta.env.MODE === "development" ? import.meta.env.BASE_URL : "";
 
-let base = (import.meta.env.MODE == 'development') ? import.meta.env.BASE_URL : ''
-
-// 2. Define some routes
-// Each route should map to a component.
-// We'll talk about nested routes later.
+// Define routes
 const routes = [
-    { path: '/', name: 'Main Page', component: MainPage },
-    { path: '/other/', name: 'Other Page', component: OtherPage },
-    { path: '/signup', name: 'Signup', component: Signup }, 
-    { path: '/login', name: 'Login', component: Login },
-    { path: '/profile', name: 'Profile', component: Profile, meta: { requiresAuth: true } },
-    { path: '/users', name: 'UsersList', component: UsersList, meta: { requiresAuth: true } },
- ];
+  { path: "/", name: "MainPage", component: MainPage },
+  { path: "/other", name: "OtherPage", component: OtherPage },
+  { path: "/signup", name: "Signup", component: Signup },
+  { path: "/login", name: "Login", component: Login },
+  {
+    path: "/profile",
+    name: "Profile",
+    component: Profile,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/users",
+    name: "UsersList",
+    component: UsersList,
+    meta: { requiresAuth: true },
+  },
+];
 
-  const router = createRouter({
-    history: createWebHistory(),
-    routes,
-  });
+// Create router instance
+const router = createRouter({
+  history: createWebHistory(base),
+  routes,
+});
 
-  router.beforeEach((to, from, next) => {
-    const isAuthenticated = localStorage.getItem('authToken');
-    if (to.meta.requiresAuth && !isAuthenticated) {
-      next({ name: 'Login' });
-    } else {
+// Navigation guard
+router.beforeEach(async (to, _, next) => {
+  const userStore = useUserStore();
+  const token = localStorage.getItem("authToken");
+
+  if (to.meta.requiresAuth && !token) {
+    // Redirect to login if not authenticated
+    console.warn("Access denied. Redirecting to login.");
+    return next({ name: "Login" });
+  }
+
+  if (token && !userStore.token) {
+    try {
+      console.log("Token exists but userStore is empty. Fetching user data...");
+      userStore.setToken(token);
+      await userStore.fetchUser();
       next();
+    } catch (error) {
+      console.error("Error fetching user data during navigation:", error);
+      userStore.clearUser();
+      next({ name: "Login" });
     }
-  });
-  
-  export default router;
+  } else {
+    next(); // Allow navigation
+  }
+});
+
+
+export default router;
