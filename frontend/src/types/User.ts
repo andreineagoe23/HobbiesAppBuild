@@ -4,6 +4,6 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  dob: string;
+  date_of_birth: string;
   hobbies: Hobby[];
 }

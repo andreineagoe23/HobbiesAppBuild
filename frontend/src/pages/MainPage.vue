@@ -1,19 +1,22 @@
 <template>
   <div>
-    <h1>Main Page</h1>
-    <UsersList />
-    <FriendRequests />
+    <h1>Welcome to the Hobbies App</h1>
+
+    <section>
+      <h2>Your Friend Requests</h2>
+      <FriendRequest />
+    </section>
   </div>
 </template>
 
 <script lang="ts">
-import UsersList from './UsersList.vue';
-import FriendRequests from './FriendRequest.vue';
+import { defineComponent } from "vue";
+import FriendRequest from "@/pages/FriendRequest.vue";
 
-export default {
+export default defineComponent({
+  name: "MainPage",
   components: {
-    UsersList,
-    FriendRequests,
+    FriendRequest,
   },
-};
+});
 </script>

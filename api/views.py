@@ -282,7 +282,36 @@ def fetch_friend_requests(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_users(request):
-    exclude_user_id = request.user.id
-    users = CustomUser.objects.exclude(id=exclude_user_id)
-    serializer = UserProfileSerializer(users, many=True)
-    return Response(serializer.data)
+    try:
+        exclude_user_id = request.user.id
+        min_age = request.query_params.get('min_age')
+        max_age = request.query_params.get('max_age')
+
+        # Fetch all users except the current user
+        users = CustomUser.objects.exclude(id=exclude_user_id)
+
+        # Filter users by age if parameters are provided
+        if min_age:
+            users = users.filter(date_of_birth__lte=f"{2025 - int(min_age)}-01-01")
+        if max_age:
+            users = users.filter(date_of_birth__gte=f"{2025 - int(max_age)}-01-01")
+
+        # Log for debugging
+        print(f"Filtered Users: {users.values('id', 'name', 'date_of_birth')}")
+        print(f"Filters: min_age={min_age}, max_age={max_age}")
+
+        # Paginate results
+        paginator = Paginator(users, 10)  # 10 users per page
+        page_number = request.query_params.get('page', 1)
+        paginated_users = paginator.get_page(page_number)
+
+        serializer = UserProfileSerializer(paginated_users, many=True)
+        return Response({
+            'results': serializer.data,
+            'total_pages': paginator.num_pages,
+            'current_page': paginated_users.number
+        }, status=HTTP_200_OK)
+    except Exception as e:
+        print(f"Error in list_users: {str(e)}")
+        return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
