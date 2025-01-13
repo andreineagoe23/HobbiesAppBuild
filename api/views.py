@@ -24,7 +24,7 @@ from django.db.models import Q
 CustomUser = get_user_model()
 
 #filtering by age (users list)
-def filter_users_with_pagination(request):
+def filter_users_with_age_sorting(request):
     if request.method == 'GET':
         try:
             # Get query parameters
@@ -32,36 +32,46 @@ def filter_users_with_pagination(request):
             max_age = request.GET.get('max_age', None)
             page_number = request.GET.get('page', 1)
             page_size = request.GET.get('page_size', 10)  # Default page size
+            sort_by_age = request.GET.get('sort_by_age', None)  # New parameter for sorting by age
 
             today = datetime.today()
-            min_dob = today - timedelta(days=int(max_age) * 365) if max_age else None
-            max_dob = today - timedelta(days=int(min_age) * 365) if min_age else None
 
-            # Filter users by age
+            # Helper function to calculate age
+            def calculate_age(dob):
+                return (today.year - dob.year) - ((today.month, today.day) < (dob.month, dob.day))
+
+            # Get all users and calculate their age
             users = CustomUser.objects.all()
-            if min_dob:
-                users = users.filter(date_of_birth__lte=min_dob)
-            if max_dob:
-                users = users.filter(date_of_birth__gte=max_dob)
-
-            # Paginate the results
-            paginator = Paginator(users, page_size)
-            page = paginator.get_page(page_number)
-
-            # Serialize the paginated data
-            user_data = [
+            users = [
                 {
                     "id": user.id,
                     "name": user.name,
                     "email": user.email,
                     "date_of_birth": user.date_of_birth,
+                    "age": calculate_age(user.date_of_birth),
                     "hobbies": [hobby.name for hobby in user.hobbies.all()],
                 }
-                for user in page
+                for user in users
             ]
 
+            # Apply filtering by age
+            if min_age is not None:
+                users = [user for user in users if user["age"] >= int(min_age)]
+            if max_age is not None:
+                users = [user for user in users if user["age"] <= int(max_age)]
+
+            # Sort by age if requested
+            if sort_by_age == 'asc':
+                users = sorted(users, key=lambda x: x["age"])
+            elif sort_by_age == 'desc':
+                users = sorted(users, key=lambda x: x["age"], reverse=True)
+
+            # Paginate the results
+            paginator = Paginator(users, page_size)
+            page = paginator.get_page(page_number)
+
             return JsonResponse({
-                "users": user_data,
+                "users": list(page),
                 "total_pages": paginator.num_pages,
                 "current_page": page.number,
                 "total_users": paginator.count

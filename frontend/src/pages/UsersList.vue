@@ -10,7 +10,13 @@
       <label for="maxAge">Max Age:</label>
       <input type="number" id="maxAge" placeholder="Enter max age" v-model="maxAge" />
 
-      <button @click="fetchUsers">Filter</button>
+      <label for="sortOrder">Sort by Age:</label>
+      <select v-model="sortOrder">
+        <option value="asc">Ascending (Youngest First)</option>
+        <option value="desc">Descending (Oldest First)</option>
+      </select>
+
+      <button @click="fetchUsers">Filter & Sort</button>
     </div>
 
     <!-- Users Table -->
@@ -20,6 +26,7 @@
           <th>Name</th>
           <th>Email</th>
           <th>Date of Birth</th>
+          <th>Age</th>
           <th>Hobbies</th>
         </tr>
       </thead>
@@ -28,6 +35,7 @@
           <td>{{ user.name }}</td>
           <td>{{ user.email }}</td>
           <td>{{ user.date_of_birth }}</td>
+          <td>{{ user.age }}</td>
           <td>{{ user.hobbies.join(', ') }}</td>
         </tr>
       </tbody>
@@ -50,6 +58,7 @@ export default defineComponent({
     const users = ref([]);
     const minAge = ref<number | null>(null);
     const maxAge = ref<number | null>(null);
+    const sortOrder = ref('asc'); // Default sorting order by age
     const currentPage = ref(1);
     const totalPages = ref(1);
 
@@ -60,6 +69,7 @@ export default defineComponent({
         if (minAge.value !== null) params.append('min_age', String(minAge.value));
         if (maxAge.value !== null) params.append('max_age', String(maxAge.value));
         params.append('page', String(currentPage.value));
+        params.append('sort_by_age', sortOrder.value);
 
         // Fetch users from the API
         const response = await fetch(`http://localhost:8000/api/users/?${params.toString()}`, {
@@ -102,6 +112,7 @@ export default defineComponent({
       users,
       minAge,
       maxAge,
+      sortOrder,
       currentPage,
       totalPages,
       fetchUsers,
@@ -113,59 +124,5 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.filters {
-  margin-bottom: 20px;
-}
-
-.filters input {
-  margin-right: 10px;
-}
-
-.filters button {
-  padding: 5px 10px;
-  background-color: #42b983;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.filters button:hover {
-  background-color: #369f6e;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-
-th {
-  background-color: #f4f4f4;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.pagination button {
-  margin: 0 5px;
-  padding: 5px 10px;
-  background-color: #42b983;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
+/* Add your styles here */
 </style>
