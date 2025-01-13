@@ -6,16 +6,18 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_200_OK
+from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_200_OK, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django import forms
 from rest_framework.authtoken.models import Token
-from .models import CustomUser, Hobby, FriendRequest
+from .models import CustomUser, Hobby, FriendRequest, Friendship
 from .serializers import UserProfileSerializer, FriendRequestSerializer, HobbySerializer
 from django.core.paginator import Paginator
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
+from rest_framework.response import Response
+
 
 CustomUser = get_user_model()
 
@@ -251,32 +253,89 @@ def send_friend_request(request):
 def accept_friend_request(request):
     request_id = request.data.get('request_id')
     try:
-        friend_request = FriendRequest.objects.get(id=request_id, to_user=request.user)
-        if friend_request.status == 'accepted':
-            return Response({'error': 'Request already accepted.'}, status=HTTP_400_BAD_REQUEST)
+        print(f"Processing accept request for ID: {request_id}")
+
+        # Fetch the friend request
+        friend_request = FriendRequest.objects.get(id=request_id, to_user=request.user, status='pending')
+        print(f"Found friend request: {friend_request}")
+
+        # Update the status to accepted
         friend_request.status = 'accepted'
         friend_request.save()
-        return Response({'message': 'Friend request accepted.'}, status=HTTP_200_OK)
+        print("Friend request status updated to 'accepted'")
+
+        # Create a friendship (ensure user1 < user2 for consistency)
+        user1, user2 = sorted([friend_request.from_user, request.user], key=lambda x: x.id)
+        friendship, created = Friendship.objects.get_or_create(user1=user1, user2=user2)
+        if created:
+            print(f"Friendship created between {user1} and {user2}")
+        else:
+            print(f"Friendship already exists between {user1} and {user2}")
+
+        return Response({'message': 'Friend request accepted'}, status=HTTP_200_OK)
     except FriendRequest.DoesNotExist:
-        return Response({'error': 'Request not found.'}, status=HTTP_400_BAD_REQUEST)
+        print(f"Friend request not found or already processed for ID: {request_id}")
+        return Response({'error': 'Friend request not found or already processed'}, status=HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(f"Error accepting friend request: {str(e)}")
+        return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def fetch_friend_requests(request):
     try:
-        page = request.query_params.get('page', 1)
-        per_page = 10
-        pending_requests = FriendRequest.objects.filter(to_user=request.user, status='pending').select_related('from_user')
-        paginator = Paginator(pending_requests, per_page)
-        paginated_requests = paginator.get_page(page)
-        serializer = FriendRequestSerializer(paginated_requests, many=True)
+        print(f"Fetching friend requests for User ID: {request.user.id}")  # Log user ID
+        requests = FriendRequest.objects.filter(to_user=request.user, status='pending')
+        print(f"Pending Friend Requests Count: {requests.count()}")  # Log request count
+        print(f"Pending Friend Requests: {requests.values('id', 'from_user__name')}")  # Log request details
+
+        serializer = FriendRequestSerializer(requests, many=True)
+        return Response({'requests': serializer.data}, status=HTTP_200_OK)
+    except Exception as e:
+        print(f"Error in fetch_friend_requests: {str(e)}")  # Log errors
+        return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def eligible_for_friend_requests(request):
+    try:
+        exclude_user_id = request.user.id
+        print(f"Authenticated User ID: {exclude_user_id}")  # Log authenticated user ID
+
+        # Get all users except the logged-in user
+        users = CustomUser.objects.exclude(id=exclude_user_id)
+        print(f"Initial User Count (excluding self): {users.count()}")  # Log user count
+
+        # Exclude users with existing friend requests
+        users_with_requests = FriendRequest.objects.filter(
+            from_user=request.user
+        ).values_list('to_user', flat=True)
+        print(f"Users with Existing Friend Requests: {list(users_with_requests)}")  # Log excluded users
+
+        users = users.exclude(id__in=users_with_requests)
+        print(f"Eligible User Count (after exclusions): {users.count()}")  # Log eligible user count
+        print(f"Eligible Users: {users.values('id', 'name')}")  # Log eligible user details
+
+        # Paginate the results
+        paginator = Paginator(users, 10)  # 10 users per page
+        page_number = request.query_params.get('page', 1)
+        paginated_users = paginator.get_page(page_number)
+
+        serializer = UserProfileSerializer(paginated_users, many=True)
         return Response({
-            'requests': serializer.data,
+            'results': serializer.data,
             'total_pages': paginator.num_pages,
-            'current_page': paginated_requests.number
+            'current_page': paginated_users.number
         }, status=HTTP_200_OK)
     except Exception as e:
+        print(f"Error in eligible_for_friend_requests: {str(e)}")  # Log errors
         return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 @api_view(['GET'])

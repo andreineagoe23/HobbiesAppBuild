@@ -1,11 +1,7 @@
 <template>
   <div>
     <h1>Welcome to the Hobbies App</h1>
-
-    <section>
-      <h2>Your Friend Requests</h2>
-      <FriendRequest />
-    </section>
+    <FriendRequest />
   </div>
 </template>
 
@@ -17,6 +13,9 @@ export default defineComponent({
   name: "MainPage",
   components: {
     FriendRequest,
+  },
+  setup() {
+    console.log("MainPage component loaded"); // Debugging log
   },
 });
 </script>

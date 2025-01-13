@@ -24,6 +24,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 # serializer for friend requests.
 class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = UserProfileSerializer(read_only=True)
+
     class Meta:
         model = FriendRequest
         fields = ['id', 'from_user', 'to_user', 'status', 'created_at']
