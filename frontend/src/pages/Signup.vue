@@ -1,179 +1,188 @@
 <template>
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card shadow">
-          <div class="card-header text-center bg-primary text-white">
-            <h2>Sign Up</h2>
-          </div>
-          <div class="card-body">
-            <form @submit.prevent="submitSignup">
-              <!-- Username -->
-              <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input
-                  type="text"
-                  id="username"
-                  class="form-control"
-                  v-model="formData.username"
-                  placeholder="Enter your username"
-                  required
-                />
-              </div>
+  <div class="signup-container">
+    <h2>Sign Up</h2>
+    <form @submit.prevent="submitSignup" class="signup-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" v-model="form.username" type="text" placeholder="Enter your username" required />
+      </div>
 
-              <!-- Email -->
-              <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  class="form-control"
-                  v-model="formData.email"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" v-model="form.email" type="email" placeholder="Enter your email" required />
+      </div>
 
-              <!-- Password -->
-              <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input
-                  type="password"
-                  id="password"
-                  class="form-control"
-                  v-model="formData.password"
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" v-model="form.password" type="password" placeholder="Enter your password" required />
+      </div>
 
-              <!-- Full Name -->
-              <div class="mb-3">
-                <label for="name" class="form-label">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  class="form-control"
-                  v-model="formData.name"
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input id="name" v-model="form.name" type="text" placeholder="Enter your full name" required />
+      </div>
 
-              <!-- Date of Birth -->
-              <div class="mb-3">
-                <label for="date_of_birth" class="form-label">Date of Birth</label>
-                <input
-                  type="date"
-                  id="date_of_birth"
-                  class="form-control"
-                  v-model="formData.date_of_birth"
-                  required
-                />
-              </div>
+      <div class="form-group">
+        <label for="date_of_birth">Date of Birth</label>
+        <input id="date_of_birth" v-model="form.date_of_birth" type="date" required />
+      </div>
 
-              <!-- Hobbies -->
-              <div class="mb-3">
-                <label for="hobbies" class="form-label">Select Hobbies</label>
-                <div class="form-check" v-for="hobby in hobbies" :key="hobby.id">
-                  <input
-                    type="checkbox"
-                    :id="`hobby-${hobby.id}`"
-                    class="form-check-input"
-                    :value="hobby.id"
-                    v-model="formData.hobbies"
-                  />
-                  <label :for="`hobby-${hobby.id}`" class="form-check-label">
-                    {{ hobby.name }}
-                  </label>
-                </div>
-              </div>
-
-              <!-- Submit Button -->
-              <div class="d-grid">
-                <button type="submit" class="btn btn-primary">Sign Up</button>
-              </div>
-            </form>
-          </div>
-          <div class="card-footer text-muted text-center">
-            Already have an account? <a href="/login">Login</a>
-          </div>
+      <div class="form-group">
+        <label for="hobbies">Hobbies</label>
+        <div class="hobbies-list">
+          <label v-for="hobby in hobbies" :key="hobby.id" class="hobby-checkbox">
+            <input
+              type="checkbox"
+              :value="hobby.id"
+              v-model="selectedHobbies"
+            />
+            {{ hobby.name }}
+          </label>
         </div>
       </div>
-    </div>
+
+      <button type="submit" class="signup-button">Sign Up</button>
+    </form>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from "vue";
-import { Hobby } from "@/types/Hobby";
+import { defineComponent, ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/store/userStore';
+import { Hobby } from '../types/Hobby';
 
 export default defineComponent({
-  name: "Signup",
   setup() {
-    const formData = ref({
-      username: "",
-      email: "",
-      password: "",
-      name: "",
-      date_of_birth: "",
-      hobbies: [] as number[],
+    const router = useRouter();
+    const userStore = useUserStore();
+
+    const form = ref({
+      username: '',
+      email: '',
+      password: '',
+      name: '',
+      date_of_birth: '',
     });
 
     const hobbies = ref<Hobby[]>([]);
-    const error = ref<string | null>(null);
+    const selectedHobbies = ref<number[]>([]);
 
-    onMounted(async () => {
+    const fetchHobbies = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/hobbies/");
+        const response = await fetch('http://localhost:8000/api/hobbies/');
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch hobbies: ${response.status} ${response.statusText}`
-          );
+          throw new Error(`Failed to fetch hobbies: ${response.status} ${response.statusText}`);
         }
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          hobbies.value = await response.json();
-        } else {
-          throw new Error("Received non-JSON response");
-        }
-      } catch (err) {
-        console.error("Error fetching hobbies:", err);
-        error.value = "Failed to load hobbies. Please try again later.";
+        hobbies.value = await response.json();
+      } catch (error: unknown) {
+        console.error('Error fetching hobbies:', (error as Error).message);
       }
-    });
+    };
 
     const submitSignup = async () => {
-  try {
-    const response = await fetch("http://localhost:8000/api/signup/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData.value),
-    });
+      try {
+        const response = await fetch('http://localhost:8000/api/signup/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...form.value,
+            hobbies: selectedHobbies.value,
+          }),
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      alert(errorData.error || "Signup failed");
-    } else {
-      alert("Signup successful! Redirecting...");
-      window.location.href = "/";
-    }
-  } catch (err) {
-    console.error("Error during signup:", err);
-    alert("An unexpected error occurred. Please try again later.");
-  }
-};
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Signup failed: ${errorData.error || response.statusText}`);
+        }
 
+        const data = await response.json();
+        userStore.setToken(data.token);
+        userStore.setUser(data.user);
+
+        alert('Signup successful! Redirecting...');
+        router.push('/protected-route'); // Replace with your actual route
+      } catch (error: unknown) {
+        console.error('Error signing up:', (error as Error).message);
+        alert((error as Error).message);
+      }
+    };
+
+    onMounted(fetchHobbies);
 
     return {
-      formData,
+      form,
       hobbies,
-      error,
+      selectedHobbies,
       submitSignup,
     };
   },
 });
 </script>
+
+<style scoped>
+.signup-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.hobbies-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hobby-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.signup-button {
+  background-color: #0066cc;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.signup-button:hover {
+  background-color: #005bb5;
+}
+</style>

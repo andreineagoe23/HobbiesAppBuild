@@ -1,19 +1,21 @@
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from .models import CustomUser, Hobby, FriendRequest
-from .serializers import UserProfileSerializer, FriendRequestSerializer, HobbySerializer
+from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_200_OK
 from django.contrib.auth import get_user_model
-from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import IntegrityError
 from django import forms
 from rest_framework.authtoken.models import Token
-
+from .models import CustomUser, Hobby, FriendRequest
+from .serializers import UserProfileSerializer, FriendRequestSerializer, HobbySerializer
+from django.core.paginator import Paginator
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
 
 CustomUser = get_user_model()
 
@@ -21,6 +23,7 @@ def main_spa(request):
     return render(request, 'index.html')
 
 @api_view(['POST'])
+@permission_classes([AllowAny])  # Allow access to unauthenticated users
 def api_signup(request):
     data = request.data
     email = data.get('email')
@@ -57,14 +60,31 @@ def api_signup(request):
                 continue
 
         user.save()
-        return Response({'message': 'User created successfully.'}, status=HTTP_201_CREATED)
+
+        # Log in the user and generate a token
+        from django.contrib.auth import authenticate
+        user = authenticate(username=email, password=password)
+        if user is None:
+            return Response({'error': 'Authentication failed.'}, status=HTTP_400_BAD_REQUEST)
+
+        from rest_framework.authtoken.models import Token
+        token, _ = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'message': 'User created successfully.',
+            'token': token.key,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name,
+                'dob': user.date_of_birth,
+                'hobbies': list(user.hobbies.values('id', 'name'))
+            }
+        }, status=HTTP_201_CREATED)
     
     except Exception as e:
         return Response({'error': str(e)}, status=HTTP_400_BAD_REQUEST)
 
-
-from rest_framework.permissions import AllowAny
-from rest_framework.decorators import permission_classes
 
 @api_view(['POST'])
 @permission_classes([AllowAny])  # Allow access to unauthenticated users
@@ -81,6 +101,7 @@ def api_login(request):
             # Generate or retrieve the token
             from rest_framework.authtoken.models import Token
             token, created = Token.objects.get_or_create(user=user)
+            print(f"Token for user {user.email}: {token.key}")  # Debugging log
             return Response({
                 'token': token.key,
                 'user': {
@@ -97,7 +118,6 @@ def api_login(request):
     except Exception as e:
         print(f"Login error: {str(e)}")
         return Response({'error': 'Internal server error'}, status=500)
-
 
 
 
@@ -200,13 +220,69 @@ def logout_view(request):
     return redirect('login')
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_hobbies(request):
     try:
         hobbies = Hobby.objects.all()
         serializer = HobbySerializer(hobbies, many=True)
         return Response(serializer.data)
     except Exception as e:
-        print(f"Error fetching hobbies: {str(e)}")
-        return Response({"error": "Unable to fetch hobbies. Please try again later."}, status=500)
+        return Response({"error": f"Unable to fetch hobbies: {str(e)}"}, status=500)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_friend_request(request):
+    to_user_id = request.data.get('to_user_id')
+    if not to_user_id:
+        return Response({'error': 'Recipient user ID is required.'}, status=HTTP_400_BAD_REQUEST)
+    try:
+        to_user = CustomUser.objects.get(id=to_user_id)
+        if FriendRequest.objects.filter(from_user=request.user, to_user=to_user, status='pending').exists():
+            return Response({'error': 'Friend request already sent.'}, status=HTTP_400_BAD_REQUEST)
+        FriendRequest.objects.create(from_user=request.user, to_user=to_user)
+        return Response({'message': 'Friend request sent successfully.'}, status=HTTP_201_CREATED)
+    except CustomUser.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def accept_friend_request(request):
+    request_id = request.data.get('request_id')
+    try:
+        friend_request = FriendRequest.objects.get(id=request_id, to_user=request.user)
+        if friend_request.status == 'accepted':
+            return Response({'error': 'Request already accepted.'}, status=HTTP_400_BAD_REQUEST)
+        friend_request.status = 'accepted'
+        friend_request.save()
+        return Response({'message': 'Friend request accepted.'}, status=HTTP_200_OK)
+    except FriendRequest.DoesNotExist:
+        return Response({'error': 'Request not found.'}, status=HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fetch_friend_requests(request):
+    try:
+        page = request.query_params.get('page', 1)
+        per_page = 10
+        pending_requests = FriendRequest.objects.filter(to_user=request.user, status='pending').select_related('from_user')
+        paginator = Paginator(pending_requests, per_page)
+        paginated_requests = paginator.get_page(page)
+        serializer = FriendRequestSerializer(paginated_requests, many=True)
+        return Response({
+            'requests': serializer.data,
+            'total_pages': paginator.num_pages,
+            'current_page': paginated_requests.number
+        }, status=HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_users(request):
+    exclude_user_id = request.user.id
+    users = CustomUser.objects.exclude(id=exclude_user_id)
+    serializer = UserProfileSerializer(users, many=True)
+    return Response(serializer.data)
