@@ -16,11 +16,6 @@ from .serializers import UserProfileSerializer, FriendRequestSerializer, HobbySe
 from django.core.paginator import Paginator
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
-<<<<<<< HEAD
-
-CustomUser = get_user_model()
-
-=======
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from .models import CustomUser
@@ -77,7 +72,6 @@ def filter_users_with_pagination(request):
 
     return JsonResponse({"message": "Invalid request method"}, status=405)
 
->>>>>>> origin/Chun
 def main_spa(request):
     return render(request, 'index.html')
 
