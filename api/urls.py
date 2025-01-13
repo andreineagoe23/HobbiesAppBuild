@@ -1,7 +1,11 @@
 from django.urls import path
 from .views import (
     main_spa, signup_view, login_view, logout_view,
+<<<<<<< HEAD
     UserProfileAPIView, api_login, api_signup, get_hobbies, send_friend_request, accept_friend_request, fetch_friend_requests, list_users
+=======
+    UserProfileAPIView, api_login, api_signup, get_hobbies, send_friend_request, accept_friend_request, fetch_friend_requests, list_users, filter_users_with_pagination
+>>>>>>> origin/Chun
 )
 
 urlpatterns = [
@@ -17,5 +21,9 @@ urlpatterns = [
     path('api/friend-requests/send/', send_friend_request, name='send_friend_request'),
     path('api/friend-requests/accept/', accept_friend_request, name='accept_friend_request'),
     path('api/friend-requests/', fetch_friend_requests, name='fetch_friend_requests'),
+<<<<<<< HEAD
+=======
+    path('api/users/', filter_users_with_pagination, name='filter_users_with_pagination'),
+>>>>>>> origin/Chun
 ]
 

@@ -16,9 +16,68 @@ from .serializers import UserProfileSerializer, FriendRequestSerializer, HobbySe
 from django.core.paginator import Paginator
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
+<<<<<<< HEAD
 
 CustomUser = get_user_model()
 
+=======
+from datetime import datetime, timedelta
+from django.http import JsonResponse
+from .models import CustomUser
+from django.db.models import Q
+
+CustomUser = get_user_model()
+
+#filtering by age (users list)
+def filter_users_with_pagination(request):
+    if request.method == 'GET':
+        try:
+            # Get query parameters
+            min_age = request.GET.get('min_age', None)
+            max_age = request.GET.get('max_age', None)
+            page_number = request.GET.get('page', 1)
+            page_size = request.GET.get('page_size', 10)  # Default page size
+
+            today = datetime.today()
+            min_dob = today - timedelta(days=int(max_age) * 365) if max_age else None
+            max_dob = today - timedelta(days=int(min_age) * 365) if min_age else None
+
+            # Filter users by age
+            users = CustomUser.objects.all()
+            if min_dob:
+                users = users.filter(date_of_birth__lte=min_dob)
+            if max_dob:
+                users = users.filter(date_of_birth__gte=max_dob)
+
+            # Paginate the results
+            paginator = Paginator(users, page_size)
+            page = paginator.get_page(page_number)
+
+            # Serialize the paginated data
+            user_data = [
+                {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "date_of_birth": user.date_of_birth,
+                    "hobbies": [hobby.name for hobby in user.hobbies.all()],
+                }
+                for user in page
+            ]
+
+            return JsonResponse({
+                "users": user_data,
+                "total_pages": paginator.num_pages,
+                "current_page": page.number,
+                "total_users": paginator.count
+            }, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"message": "Invalid request method"}, status=405)
+
+>>>>>>> origin/Chun
 def main_spa(request):
     return render(request, 'index.html')
 
