@@ -355,10 +355,34 @@ def list_users(request):
         if max_age:
             users = users.filter(date_of_birth__gte=f"{2025 - int(max_age)}-01-01")
 
+
+        # Get the hobbies of the currently authenticated user as a set
+        #set intersection to be used to find similarity score in this case
+        #if this works, then cool otherwise i am adding simpler get method dow commmented
+        current_user_hobbies = set(request.user.hobbies.values_list('id', flat=True))
+
+        # Calculate the similarity score for each user based on common hobbies
+        user_similarity_scores = []
+
+        # Iterate over all users in the database
+        for user in users:
+            # Get the hobbies for each user
+            user_hobbies = set(user.hobbies.values_list('id', flat=True))
+
+            # Calculate the intersection of hobbies (common hobbies)
+            common_hobbies = current_user_hobbies.intersection(user_hobbies)
+            similarity_score = len(common_hobbies) # Similarity score is the count of common hobbies
+
+            # Append the user with their similarity score as a tuple
+            user_similarity_scores.append((user, similarity_score))
+
+        # Sort users by similarity score in descending order
+        sorted_users = sorted(user_similarity_scores, key=lambda x: x[1], reverse=True)
+
         # Log for debugging
         print(f"Filtered Users: {users.values('id', 'name', 'date_of_birth')}")
         print(f"Filters: min_age={min_age}, max_age={max_age}")
-
+        
         # Paginate results
         paginator = Paginator(users, 10)  # 10 users per page
         page_number = request.query_params.get('page', 1)
@@ -374,3 +398,64 @@ def list_users(request):
         print(f"Error in list_users: {str(e)}")
         return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+#-----------------this is the simpler get method for list_users-------------------
+
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def list_users(request):
+#     try:
+#         exclude_user_id = request.user.id
+#         min_age = request.query_params.get('min_age')
+#         max_age = request.query_params.get('max_age')
+
+#         # Fetch all users except the current user
+#         users = CustomUser.objects.exclude(id=exclude_user_id)
+
+#         # Filter users by age if parameters are provided
+#         if min_age:
+#             users = users.filter(date_of_birth__lte=f"{2025 - int(min_age)}-01-01")
+#         if max_age:
+#             users = users.filter(date_of_birth__gte=f"{2025 - int(max_age)}-01-01")
+
+#         # Get the hobbies of the currently authenticated user
+#         current_user_hobbies = set(request.user.hobbies.values_list('id', flat=True))
+
+#         # Initialize a list to store users and their similarity score
+#         user_similarity_scores = []
+
+#         # Loop over users and calculate the similarity score for each one
+#         for user in users:
+#             # Get the user's hobbies
+#             user_hobbies = set(user.hobbies.values_list('id', flat=True))
+
+#             # Initialize similarity score
+#             similarity_score = 0
+
+#             # Manually count the matching hobbies
+#             for hobby in user_hobbies:
+#                 if hobby in current_user_hobbies:
+#                     similarity_score += 1
+
+#             # Append the user with their similarity score
+#             user_similarity_scores.append((user, similarity_score))
+
+#         # Sort the users based on the similarity score (descending order)
+#         sorted_users = sorted(user_similarity_scores, key=lambda x: x[1], reverse=True)
+
+#         # Paginate the sorted users list
+#         paginator = Paginator(sorted_users, 10)
+#         page_number = request.query_params.get('page', 1)
+#         paginated_users = paginator.get_page(page_number)
+
+#         # Serialize the users and return the response
+#         serializer = UserProfileSerializer(paginated_users, many=True)
+#         return Response({
+#             'results': serializer.data,
+#             'total_pages': paginator.num_pages,
+#             'current_page': paginated_users.number
+#         }, status=HTTP_200_OK)
+
+#     except Exception as e:
+#         print(f"Error in list_users: {str(e)}")
+#         return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)

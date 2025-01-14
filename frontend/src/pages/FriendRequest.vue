@@ -53,6 +53,7 @@ export default defineComponent({
 
     const userStore = useUserStore();
     const apiBaseUrl = "http://localhost:8000";
+    console.log(userStore.token);
 
     const fetchUsers = async () => {
       loadingUsers.value = true;
