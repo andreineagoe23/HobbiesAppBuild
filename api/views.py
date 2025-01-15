@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_200_OK, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.db.models import Q
 from django import forms
 from rest_framework.authtoken.models import Token
 from .models import CustomUser, Hobby, FriendRequest, Friendship
@@ -397,6 +398,30 @@ def list_users(request):
     except Exception as e:
         print(f"Error in list_users: {str(e)}")
         return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fetch_friends(request):
+    #gets all the users friends.
+    try:
+        user = request.user
+
+        friendships = Friendship.objects.filter(Q(user1=user) | Q(user2=user))
+
+
+        friends = []
+        for friendship in friendships:
+            if friendship.user1 == user:
+                friends.append(friendship.user2)
+            else:
+                friends.append(friendship.user1)
+
+        # Serialize 
+        serializer = UserProfileSerializer(friends, many=True)
+        return Response({"friends": serializer.data}, status=HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 #-----------------this is the simpler get method for list_users-------------------
