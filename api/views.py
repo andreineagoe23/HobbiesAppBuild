@@ -29,7 +29,7 @@ def main_spa(request):
 def api_signup(request):
     data = request.data
     email = data.get('email')
-    username = data.get('username')
+    username = email
     password = data.get('password')
     name = data.get('name')
     date_of_birth = data.get('date_of_birth')
