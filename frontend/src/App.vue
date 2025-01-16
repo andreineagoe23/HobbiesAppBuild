@@ -6,7 +6,7 @@
       <router-link to="/login" v-if="!isAuthenticated">Login</router-link>
       <router-link to="/profile" v-if="isAuthenticated">Profile</router-link>
       <router-link to="/users" v-if="isAuthenticated">Users</router-link>
-      <button v-if="isAuthenticated" @click="logout">Logout</button>
+      <button v-if="isAuthenticated" class="logout-button" @click="logout">Logout</button>
     </nav>
     <main>
       <router-view></router-view>
@@ -22,14 +22,13 @@ export default defineComponent({
   setup() {
     const userStore = useUserStore();
 
-    // Reactive property for authentication status
     const isAuthenticated = computed(() => !!userStore.token);
 
-    // Logout function
+    // logout.
     const logout = () => {
-      userStore.clearUser(); // Clear the user store
-      localStorage.removeItem("authToken"); // Remove token from local storage
-      window.location.href = "/"; // Redirect to home
+      userStore.clearUser(); 
+      localStorage.removeItem("authToken"); 
+      window.location.href = "/"; 
     };
 
     return {
@@ -64,6 +63,25 @@ nav a {
 
 nav a:hover {
   text-decoration: underline;
+}
+
+nav .logout-button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+nav .logout-button:hover {
+  background-color: #d9363e; 
+}
+
+nav .logout-button:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(255, 77, 79, 0.5); 
 }
 
 main {
