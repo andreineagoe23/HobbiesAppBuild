@@ -30,12 +30,12 @@
 
       <!-- Date of Birth -->
       <div class="form-group">
-        <label for="dob" class="form-label">Date of Birth</label>
+        <label for="date_of_birth" class="form-label">Date of Birth</label>
         <input
           type="date"
-          id="dob"
+          id="date_of_birth"
           class="form-input"
-          v-model="editableUser.dob"
+          v-model="editableUser.date_of_birth"
           required
         />
       </div>
@@ -91,7 +91,7 @@ export default defineComponent({
           id: data.id,
           name: data.name,
           email: data.email,
-          dob: data.date_of_birth,
+          date_of_birth: data.date_of_birth,
           hobbies: data.hobbies,
         };
         selectedHobbies.value = data.hobbies.map((hobby: Hobby) => hobby.id);
@@ -121,7 +121,7 @@ export default defineComponent({
       const payload = {
         name: editableUser.value.name,
         email: editableUser.value.email,
-        date_of_birth: editableUser.value.dob,
+        date_of_birth: editableUser.value.date_of_birth,
         hobbies: selectedHobbies.value,
       };
 
