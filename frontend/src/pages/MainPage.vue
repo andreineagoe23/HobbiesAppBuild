@@ -1,20 +1,21 @@
 <template>
-  <div class="h1">
-    {{ title }}
+  <div>
+    <h1>Welcome to the Hobbies App</h1>
+    <FriendRequest />
   </div>
 </template>
 
 <script lang="ts">
-    import { defineComponent } from "vue";
+import { defineComponent } from "vue";
+import FriendRequest from "@/pages/FriendRequest.vue";
 
-    export default defineComponent({
-        data() {
-            return {
-                title: "Main Page",
-            }
-        }
-    })
+export default defineComponent({
+  name: "MainPage",
+  components: {
+    FriendRequest,
+  },
+  setup() {
+    console.log("MainPage component loaded"); // Debugging log
+  },
+});
 </script>
-
-<style scoped>
-</style>

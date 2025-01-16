@@ -1,0 +1,26 @@
+.loading {
+  font-size: 16px;
+  color: #555;
+}
+
+.request-item {
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.accept-button {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #fff;
+  background-color: #28a745;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.accept-button:hover {
+  background-color: #218838;
+}

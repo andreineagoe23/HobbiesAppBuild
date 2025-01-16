@@ -1,34 +1,31 @@
 from rest_framework import serializers
 from .models import CustomUser, Hobby, FriendRequest
 
-# serializer for hobbies.
 class HobbySerializer(serializers.ModelSerializer):
     class Meta:
         model = Hobby
         fields = ['id', 'name']
 
-# serializer for user profiles.
 class UserProfileSerializer(serializers.ModelSerializer):
-    hobbies = HobbySerializer(many=True)
+    # Accepts IDs for hobbies during updates but returns full details for GET
+    hobbies = serializers.PrimaryKeyRelatedField(many=True, queryset=Hobby.objects.all())
 
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'name', 'email', 'date_of_birth', 'hobbies']
 
-    def update(self, instance, validated_data):
-        hobbies_data = validated_data.pop('hobbies', [])
-        instance = super().update(instance, validated_data)
-
-        if hobbies_data:
-            instance.hobbies.clear()
-            for hobby_data in hobbies_data:
-                hobby, created = Hobby.objects.get_or_create(**hobby_data)
-                instance.hobbies.add(hobby)
-
-        return instance
+    def to_representation(self, instance):
+        """
+        Convert the user instance into a format that includes detailed hobby info.
+        """
+        representation = super().to_representation(instance)
+        representation['hobbies'] = HobbySerializer(instance.hobbies.all(), many=True).data
+        return representation
 
 # serializer for friend requests.
 class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = UserProfileSerializer(read_only=True)
+
     class Meta:
         model = FriendRequest
         fields = ['id', 'from_user', 'to_user', 'status', 'created_at']
