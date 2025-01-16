@@ -1,9 +1,54 @@
 c# Template for ECS639U Group Coursework
 
+GROUP 65 
+
+MEMBERS - TASK DIVISION(everyone add the work you guys were assigned and what you did)
+
+Andrei Neagoe - 
+Chun Yi Ng - 
+Halak Sanjaybhai Pandya - 
+Joshua Penhaligon - 
+
+<!------------------- END OF SECTION -------------------->
+
+LOGIN DETAILS OF THE ADMIN
+
+Admin 
+Email - 
+Password - 
+
+
+LOGIN DETAILS OF TEST USERS
+
+1. Chun Brown
+Email - chun@gmail.com
+Password - Cod6N(
+
+2. Joshua Smith
+Email - joshua@gmail.com
+Password - J05_hua
+
+3. Halak Rodriguez
+Email - halak@gmail.com
+Password - h11_luck
+
+4. Andrei Johnson
+Email - andrei@gmail.com
+Password -  _Dr389
+
+5. Beyonce Cooper
+Email - beyonce@gmail.com
+Password - B3y_C00p 
+
+6. Allyson Bell
+Email - allyson@gmail.com
+Password - Ally_N_s0n
+
+<!------------------- END OF SECTION -------------------->
+
+RESOURCES:
+
 SELENIUM TEST VIDEO: https://www.youtube.com/watch?v=zmCv9vd88_g
-
-
-
 
 
 This template should be used as the starting point for your group coursework in the module ECS639U Web Programming (at Queen Mary University of London). Use Git (github.qmul.ac.uk) to collaborate on the coursework with your group members. Module leader: Paulo Oliva <[p.oliva@qmul.ac.uk](mailto:p.oliva@qmul.ac.uk)>
