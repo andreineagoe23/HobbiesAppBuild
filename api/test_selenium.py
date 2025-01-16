@@ -24,7 +24,7 @@ from api.models import FriendRequest
 
 #-------------------Selenium Tests-------------------
 
-
+# THIS HAS BEEN DEMONSTRATED IN A YOUTUBE VIDEO. https://www.youtube.com/watch?v=zmCv9vd88_g
 
 class SeleniumTests(unittest.TestCase):
 
@@ -129,14 +129,14 @@ class SeleniumTests(unittest.TestCase):
 
         time.sleep(1)  
         alert = driver.switch_to.alert
-        self.assertEqual(alert.text, "updated!", "error.")
+        self.assertEqual(alert.text, "Profile updated successfully!", "error.")
         alert.accept()  
 
         time.sleep(2)
 
         # check the name
         updatedName = driver.find_element(By.XPATH, '//input[@id="name"]').get_attribute("value")
-        self.assertEqual(updatedName, "user updated", "name isn’t changed.")
+        self.assertEqual(updatedName, "Updated User", "name isn’t changed.")
 
         # check the dob
         updatedDob = driver.find_element(By.XPATH, '//input[@id="dob"]').get_attribute("value")
@@ -216,7 +216,7 @@ class SeleniumTests(unittest.TestCase):
         driver = self.driver
 
         # log in (this will be another user in the case of the marks scheme)
-        self.login(driver, "joshua@gmail.com", "J05_hua")
+        self.login(driver, "brodyfoxx@gmail.com", "yomama")
 
         # nav to friend req page
         driver.get(self.baseUrl)
@@ -253,7 +253,6 @@ class SeleniumTests(unittest.TestCase):
         )
 
     def tearDown(self):
-        time.sleep(2) # wait 2 secs for debugging.
         self.driver.quit()
 
 

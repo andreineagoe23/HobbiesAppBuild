@@ -1,5 +1,11 @@
 c# Template for ECS639U Group Coursework
 
+SELENIUM TEST VIDEO: https://www.youtube.com/watch?v=zmCv9vd88_g
+
+
+
+
+
 This template should be used as the starting point for your group coursework in the module ECS639U Web Programming (at Queen Mary University of London). Use Git (github.qmul.ac.uk) to collaborate on the coursework with your group members. Module leader: Paulo Oliva <[p.oliva@qmul.ac.uk](mailto:p.oliva@qmul.ac.uk)>
 
 ## Local development
