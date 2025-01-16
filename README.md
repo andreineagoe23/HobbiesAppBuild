@@ -7,7 +7,7 @@ MEMBERS - TASK DIVISION(everyone add the work you guys were assigned and what yo
 Andrei Neagoe - 
 Chun Yi Ng - 
 Halak Sanjaybhai Pandya - 
-Joshua Penhaligon - 
+Joshua Penhaligon - Was assigned: Django views and endpoints. User profile management APIs. Friend request handling logic. Server-side validation. Backend unit tests. Completed: Django views and endpoints (initial start, this was built upon by groupmates). Partial friend request handling logic. Bug fixes in signup. All backend selenium tests. Video link to show them working. Styling of the webapp. 
 
 <!------------------- END OF SECTION -------------------->
 

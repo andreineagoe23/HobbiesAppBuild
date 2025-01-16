@@ -21,7 +21,7 @@ class CustomUser(AbstractUser):
     date_of_birth = models.DateField(null=True, blank=True)
     hobbies = models.ManyToManyField(Hobby, blank=True)
 
-    USERNAME_FIELD = 'email'  # Use email for authentication
+    USERNAME_FIELD = 'email'  
     REQUIRED_FIELDS = ['username', 'name', 'date_of_birth']
 
     def __str__(self):

@@ -26,7 +26,7 @@ def main_spa(request):
     return render(request, 'index.html')
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Allow access to unauthenticated users
+@permission_classes([AllowAny])  
 def api_signup(request):
     data = request.data
     email = data.get('email')
@@ -34,15 +34,15 @@ def api_signup(request):
     password = data.get('password')
     name = data.get('name')
     date_of_birth = data.get('date_of_birth')
-    hobbies = data.get('hobbies', [])  # List of hobby IDs
+    hobbies = data.get('hobbies', [])  
 
-    # Validate required fields
+    # validation
     if not email or not username or not password or not name or not date_of_birth:
         print("all fields required")
         return Response({'error': 'All fields are required.'}, status=HTTP_400_BAD_REQUEST)
 
     try:
-        if CustomUser.objects.filter(email=email).exists():
+        if CustomUser.objects.filter(email=email).exists(): # more server side validation for email and username
             print("email already exists")
             return Response({'error': 'Email already exists.'}, status=HTTP_400_BAD_REQUEST)
 
@@ -50,7 +50,7 @@ def api_signup(request):
             print("username already exists.")
             return Response({'error': 'Username already exists.'}, status=HTTP_400_BAD_REQUEST)
 
-        user = CustomUser.objects.create_user(
+        user = CustomUser.objects.create_user( # create custom user object
             username=username,
             email=email,
             password=password,
@@ -67,7 +67,7 @@ def api_signup(request):
 
         user.save()
         print("Signup success!")
-        # Log in the user and generate a token
+        # login, generate a token
         from django.contrib.auth import authenticate
         user = authenticate(username=email, password=password)
         if user is None:
@@ -76,7 +76,7 @@ def api_signup(request):
         from rest_framework.authtoken.models import Token
         token, _ = Token.objects.get_or_create(user=user)
 
-        
+        # return response message with user object
         return Response({
             'message': 'User created successfully.',
             'token': token.key,
@@ -94,21 +94,20 @@ def api_signup(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Allow access to unauthenticated users
+@permission_classes([AllowAny])  
 def api_login(request):
     try:
-        email = request.data.get('email')
+        email = request.data.get('email') # get email and password
         password = request.data.get('password')
 
-        if not email or not password:
+        if not email or not password: # validation
             return Response({'error': 'Email and password are required.'}, status=400)
 
         user = authenticate(request, username=email, password=password)
         if user:
-            # Generate or retrieve the token
             from rest_framework.authtoken.models import Token
             token, created = Token.objects.get_or_create(user=user)
-            print(f"Token for user {user.email}: {token.key}")  # Debugging log
+            print(f"Token for user {user.email}: {token.key}")  # for debugging
             return Response({
                 'token': token.key,
                 'user': {
@@ -132,27 +131,23 @@ class UserProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """
-        Retrieve the authenticated user's profile.
-        """
+        # get user's profile data.
         user = request.user
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
 
     def put(self, request):
-        """
-        Update the authenticated user's profile.
-        """
-        print("Authenticated user:", request.user)  # Debugging log
-        print("Received data:", request.data)      # Debugging log
+        # update user profile.
+        print("Authenticated user:", request.user)  # debugging
+        print("Received data:", request.data)      
 
         serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            print("Saved data:", serializer.data)  # Debugging log
+            print("Saved data:", serializer.data)  
             return Response(serializer.data)
         else:
-            print("Validation errors:", serializer.errors)  # Debugging log
+            print("Validation errors:", serializer.errors) 
             return Response(serializer.errors, status=400)
 
 
@@ -171,7 +166,7 @@ class CustomUserCreationForm(forms.ModelForm):
         model = CustomUser
         fields = ['name', 'email', 'username', 'date_of_birth', 'hobbies', 'password']
 
-    def clean(self):
+    def clean(self): # cleans input data.
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
@@ -193,12 +188,12 @@ class CustomUserCreationForm(forms.ModelForm):
             raise forms.ValidationError("Username already exists.")
         return username
 
-def signup_view(request):
+def signup_view(request): # signup 
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
+            user.set_password(form.cleaned_data['password']) # cleans the password for hashing
             user.save()
             form.save_m2m()
             return redirect('login')
@@ -210,7 +205,7 @@ def signup_view(request):
 
 
 
-def login_view(request):
+def login_view(request): # login 
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
@@ -222,13 +217,13 @@ def login_view(request):
     return render(request, 'api/spa/login.html', {'form': form})
 
 
-def logout_view(request):
+def logout_view(request): # logout
     logout(request)
     return redirect('login')
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def get_hobbies(request):
+def get_hobbies(request): # fetches all hobbies that exist.
     try:
         hobbies = Hobby.objects.all()
         serializer = HobbySerializer(hobbies, many=True)
@@ -239,14 +234,14 @@ def get_hobbies(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def send_friend_request(request):
+def send_friend_request(request): # handle sending a friend request.
     to_user_id = request.data.get('to_user_id')
     if not to_user_id:
         return Response({'error': 'Recipient user ID is required.'}, status=HTTP_400_BAD_REQUEST)
     try:
         to_user = CustomUser.objects.get(id=to_user_id)
         if FriendRequest.objects.filter(from_user=request.user, to_user=to_user, status='pending').exists():
-            return Response({'error': 'Friend request already sent.'}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Friend request already sent.'}, status=HTTP_400_BAD_REQUEST) # checks if friend request is already sent
         FriendRequest.objects.create(from_user=request.user, to_user=to_user)
         return Response({'message': 'Friend request sent successfully.'}, status=HTTP_201_CREATED)
     except CustomUser.DoesNotExist:
@@ -255,30 +250,30 @@ def send_friend_request(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def accept_friend_request(request):
+def accept_friend_request(request): # accepting a friend request.
     request_id = request.data.get('request_id')
     try:
         print(f"Processing accept request for ID: {request_id}")
 
-        # Fetch the friend request
+        # gets the targeted request
         friend_request = FriendRequest.objects.get(id=request_id, to_user=request.user, status='pending')
         print(f"Found friend request: {friend_request}")
 
-        # Update the status to accepted
+        # change it to accepted to accept it 
         friend_request.status = 'accepted'
         friend_request.save()
         print("Friend request status updated to 'accepted'")
 
-        # Create a friendship (ensure user1 < user2 for consistency)
+        # create a friendship in the friendship table
         user1, user2 = sorted([friend_request.from_user, request.user], key=lambda x: x.id)
-        friendship, created = Friendship.objects.get_or_create(user1=user1, user2=user2)
+        friendship, created = Friendship.objects.get_or_create(user1=user1, user2=user2) 
         if created:
             print(f"Friendship created between {user1} and {user2}")
         else:
-            print(f"Friendship already exists between {user1} and {user2}")
+            print(f"Friendship already exists between {user1} and {user2}") # if the friendship already exists.
 
         return Response({'message': 'Friend request accepted'}, status=HTTP_200_OK)
-    except FriendRequest.DoesNotExist:
+    except FriendRequest.DoesNotExist: # more validation
         print(f"Friend request not found or already processed for ID: {request_id}")
         return Response({'error': 'Friend request not found or already processed'}, status=HTTP_400_BAD_REQUEST)
     except Exception as e:
@@ -290,43 +285,42 @@ def accept_friend_request(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def fetch_friend_requests(request):
+def fetch_friend_requests(request): # gets all friend requests for a user
     try:
-        print(f"Fetching friend requests for User ID: {request.user.id}")  # Log user ID
+        print(f"Fetching friend requests for User ID: {request.user.id}")  
         requests = FriendRequest.objects.filter(to_user=request.user, status='pending')
-        print(f"Pending Friend Requests Count: {requests.count()}")  # Log request count
-        print(f"Pending Friend Requests: {requests.values('id', 'from_user__name')}")  # Log request details
+        print(f"Pending Friend Requests Count: {requests.count()}")  
+        print(f"Pending Friend Requests: {requests.values('id', 'from_user__name')}")  
 
         serializer = FriendRequestSerializer(requests, many=True)
         return Response({'requests': serializer.data}, status=HTTP_200_OK)
     except Exception as e:
-        print(f"Error in fetch_friend_requests: {str(e)}")  # Log errors
+        print(f"Error in fetch_friend_requests: {str(e)}")  
         return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def eligible_for_friend_requests(request):
+def eligible_for_friend_requests(request): # this is so you can't send a request to someone who you have already requested.
     try:
         exclude_user_id = request.user.id
-        print(f"Authenticated User ID: {exclude_user_id}")  # Log authenticated user ID
+        print(f"Authenticated User ID: {exclude_user_id}")  
 
-        # Get all users except the logged-in user
         users = CustomUser.objects.exclude(id=exclude_user_id)
-        print(f"Initial User Count (excluding self): {users.count()}")  # Log user count
+        print(f"Initial User Count (excluding self): {users.count()}")  
 
-        # Exclude users with existing friend requests
+        # get rid of users who you have already sent a request.
         users_with_requests = FriendRequest.objects.filter(
             from_user=request.user
         ).values_list('to_user', flat=True)
-        print(f"Users with Existing Friend Requests: {list(users_with_requests)}")  # Log excluded users
+        print(f"Users with Existing Friend Requests: {list(users_with_requests)}")  
 
         users = users.exclude(id__in=users_with_requests)
-        print(f"Eligible User Count (after exclusions): {users.count()}")  # Log eligible user count
-        print(f"Eligible Users: {users.values('id', 'name')}")  # Log eligible user details
+        print(f"Eligible User Count (after exclusions): {users.count()}") 
+        print(f"Eligible Users: {users.values('id', 'name')}") 
 
-        # Paginate the results
-        paginator = Paginator(users, 10)  # 10 users per page
+        # Pagination
+        paginator = Paginator(users, 10)  
         page_number = request.query_params.get('page', 1)
         paginated_users = paginator.get_page(page_number)
 
@@ -337,7 +331,7 @@ def eligible_for_friend_requests(request):
             'current_page': paginated_users.number
         }, status=HTTP_200_OK)
     except Exception as e:
-        print(f"Error in eligible_for_friend_requests: {str(e)}")  # Log errors
+        print(f"Error in eligible_for_friend_requests: {str(e)}")  
         return Response({'error': str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -345,16 +339,16 @@ def eligible_for_friend_requests(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_users(request):
+def list_users(request): # get all users.
     try:
         exclude_user_id = request.user.id
         min_age = request.query_params.get('min_age')
         max_age = request.query_params.get('max_age')
 
-        # Fetch all users except the current user
+        # fetch all users apart from the current user.
         users = CustomUser.objects.exclude(id=exclude_user_id)
 
-        # Filter users by age if parameters are provided
+        # filter via age if needed.
         if min_age:
             users = users.filter(date_of_birth__lte=f"{2025 - int(min_age)}-01-01")
         if max_age:
