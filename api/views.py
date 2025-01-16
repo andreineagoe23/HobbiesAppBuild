@@ -38,13 +38,16 @@ def api_signup(request):
 
     # Validate required fields
     if not email or not username or not password or not name or not date_of_birth:
+        print("all fields required")
         return Response({'error': 'All fields are required.'}, status=HTTP_400_BAD_REQUEST)
 
     try:
         if CustomUser.objects.filter(email=email).exists():
+            print("email already exists")
             return Response({'error': 'Email already exists.'}, status=HTTP_400_BAD_REQUEST)
 
         if CustomUser.objects.filter(username=username).exists():
+            print("username already exists.")
             return Response({'error': 'Username already exists.'}, status=HTTP_400_BAD_REQUEST)
 
         user = CustomUser.objects.create_user(
@@ -63,7 +66,7 @@ def api_signup(request):
                 continue
 
         user.save()
-
+        print("Signup success!")
         # Log in the user and generate a token
         from django.contrib.auth import authenticate
         user = authenticate(username=email, password=password)
@@ -73,6 +76,7 @@ def api_signup(request):
         from rest_framework.authtoken.models import Token
         token, _ = Token.objects.get_or_create(user=user)
 
+        
         return Response({
             'message': 'User created successfully.',
             'token': token.key,
