@@ -4,7 +4,7 @@ GROUP 65
 
 MEMBERS - TASK DIVISION(everyone add the work you guys were assigned and what you did)
 
-Andrei Neagoe - 
+Andrei Neagoe - Was assigned Django Model Design: Custom User Model, database models for hobbies and friend requests, initial database setup. Completed: Everything that was said previously + Profile update logic + Partial Signup + Login System + CSS initial start + Initial User List sorting logic.
 Chun Yi Ng - 
 Halak Sanjaybhai Pandya - 
 Joshua Penhaligon - Was assigned: Django views and endpoints. User profile management APIs. Friend request handling logic. Server-side validation. Backend unit tests. Completed: Django views and endpoints (initial start, this was built upon by groupmates). Partial friend request handling logic. Bug fixes in signup. All backend selenium tests. Video link to show them working. Styling of the webapp. 
