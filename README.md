@@ -14,8 +14,8 @@ Joshua Penhaligon - Was assigned: Django views and endpoints. User profile manag
 LOGIN DETAILS OF THE ADMIN
 
 Admin 
-Email - 
-Password - 
+Email - admin@gmail.com
+Password - admin
 
 
 LOGIN DETAILS OF TEST USERS

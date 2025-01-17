@@ -301,3 +301,12 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,django
 chromedriver.exe
+api/__pycache__/__init__.cpython-312.pyc
+api/__pycache__/admin.cpython-312.pyc
+api/__pycache__/apps.cpython-312.pyc
+api/__pycache__/models.cpython-312.pyc
+api/__pycache__/serializers.cpython-312.pyc
+api/__pycache__/urls.cpython-312.pyc
+api/__pycache__/views.cpython-312.pyc
+*.pyc
+*.pyc
